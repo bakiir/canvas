@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
+	"strconv"
 )
 
 type AdminController struct {
@@ -84,3 +85,50 @@ func (ac *AdminController) CreateTeacher(c *gin.Context) {
 	teacher.Password = ""
 	c.JSON(http.StatusCreated, gin.H{"data": teacher})
 }
+
+func (ac *AdminController) DeleteStudent(c *gin.Context) {
+	studentID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid student ID"})
+		return
+	}
+
+	var student models.Student
+	if err := ac.db.Where("id = ?", studentID).First(&student).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Student not found"})
+		return
+	}
+
+	ac.db.Delete(&student) // Полное удаление
+	c.JSON(http.StatusOK, gin.H{"message": "Student deleted successfully"})
+}
+
+func (ac *AdminController) DeleteTeacher(c *gin.Context) {
+	teacherID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid student ID"})
+		return
+	}
+	var teacher models.Teacher
+	if err := ac.db.Where("id = ?", teacherID).First(&teacher).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Student not found"})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"deleted": teacher})
+
+}
+
+//func (ac *AdminController) DeleteCourse(ctx *gin.Context) {
+//	//studentID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+//	//if err != nil {
+//	//	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid student ID"})
+//	//	return
+//	//}
+//	//var student models.Student
+//	//if err := ac.db.Where("id = ?", studentID).First(&student).Error; err != nil {
+//	//	c.JSON(http.StatusNotFound, gin.H{"error": "Student not found"})
+//	//}
+//	//
+//	//c.JSON(http.StatusOK, gin.H{"deleted": student})
+//
+//}

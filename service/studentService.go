@@ -110,7 +110,7 @@ func (sc *StudentController) Login(c *gin.Context) {
 	}
 
 	var student models.Student
-	if err := sc.db.Where("login = ?", credentials.Login).First(&student).Error; err != nil {
+	if err := sc.db.Where("id = ?", credentials.Login).First(&student).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}

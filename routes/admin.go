@@ -15,8 +15,13 @@ func SetupAdminRoutes(router *gin.Engine, db *gorm.DB) {
 	{
 		// POST /admin/students - создание студента администратором
 		adminRoutes.POST("/students", adminController.CreateStudent)
+		adminRoutes.DELETE("/students/:id", adminController.DeleteStudent)
 
 		// POST /admin/teachers - создание преподавателя администратором
 		adminRoutes.POST("/teachers", adminController.CreateTeacher)
+		adminRoutes.DELETE("/teachers/:id", adminController.DeleteTeacher)
+
+		//adminRoutes.DELETE("/:id/courses", adminController.DeleteCourse)
+
 	}
 }

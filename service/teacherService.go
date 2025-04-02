@@ -90,6 +90,14 @@ func (tc *TeacherController) CreateCourse(c *gin.Context) {
 		TeacherID: input.TeacherID,
 	}
 
+	var teacherDB models.Teacher
+	err := tc.db.Where("id = ?", course.TeacherID).First(&teacher).Error
+	if err != nil {
+		err.Error() // Обработайте ошибку, если запись не найден
+	}
+
+	course.Teacher = teacherDB
+
 	if err := tc.db.Create(&course).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create course"})
 		return

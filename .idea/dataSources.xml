@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="canvas_db@localhost" uuid="81ca4700-5d2f-452e-b2aa-d17cfbc0b6fc">
+    <data-source source="LOCAL" name="canvas_db@localhost" uuid="ce212dd3-ffbd-4479-b162-7a45e6e740b2">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>

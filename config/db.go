@@ -13,11 +13,12 @@ var DB *gorm.DB
 
 // Connect инициализирует подключение к базе данных
 func Connect() {
-	db, err := gorm.Open(postgres.Open("postgres://postgres:postgres@localhost:5439/postgres?sslmode=disable"), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open("postgres://postgres:postgres@localhost:5439/canvas_db?sslmode=disable"), &gorm.Config{})
 
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
+	db.Exec("SET session_replication_role = 'origin'")
 
 	// Настройка пула соединений
 	sqlDB, err := db.DB()
@@ -40,32 +41,31 @@ func Connect() {
 }
 
 func migrateModels(db *gorm.DB) error {
-	// Отключаем проверки внешних ключей
-	if err := db.Exec("SET session_replication_role = replica").Error; err != nil {
-		return fmt.Errorf("failed to disable constraints: %w", err)
+	log.Println("🔹 Starting migration...")
+
+	// Check which database you're connected to
+	dbName := ""
+	db.Raw("SELECT current_database()").Scan(&dbName)
+	log.Printf("🔹 Connected to database: %s", dbName)
+
+	// Set replication role for disabling foreign key checks
+	db.Exec("SET session_replication_role = 'replica'")
+
+	log.Println("🔹 Dropping existing tables...")
+	if err := db.Migrator().DropTable(&models.Teacher{}, &models.Student{}, &models.Course{}, &models.StudentCourse{}); err != nil {
+		log.Printf("⚠️ Error dropping tables: %v", err)
+		return fmt.Errorf("failed to drop tables: %w", err)
 	}
 
-	//// Удаляем таблицы
-	//db.Migrator().DropTable(&StudentCourse{})
-	//db.Migrator().DropTable(&models.Course{})
-	//db.Migrator().DropTable(&models.Student{})
-	//db.Migrator().DropTable(&models.Teacher{})
-
-	// Сбрасываем последовательности (важно!)
-	db.Exec("ALTER SEQUENCE students_id_seq RESTART WITH 1")
-	db.Exec("ALTER SEQUENCE teachers_id_seq RESTART WITH 1")
-	db.Exec("ALTER SEQUENCE courses_id_seq RESTART WITH 1")
-
-	// Создаем таблицы
-	if err := db.AutoMigrate(&models.Teacher{}, &models.Student{}, &models.Course{}); err != nil {
+	log.Println("🔹 Running AutoMigrate...")
+	if err := db.AutoMigrate(&models.Teacher{}, &models.Student{}, &models.Course{}, &models.StudentCourse{}); err != nil {
+		log.Printf("⚠️ AutoMigrate error: %v", err)
 		return fmt.Errorf("failed to migrate models: %w", err)
 	}
 
-	// Включаем проверки внешних ключей обратно
-	if err := db.Exec("SET session_replication_role = DEFAULT").Error; err != nil {
-		return fmt.Errorf("failed to enable constraints: %w", err)
-	}
-
+	// Re-enable foreign key checks
+	db.Exec("SET session_replication_role = 'origin'")
+	log.Println("✅ Database migration completed successfully.")
 	return nil
 }
 
