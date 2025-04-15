@@ -26,6 +26,7 @@ func registerRoutes(router *gin.Engine) {
 
 	// Группа маршрутов для преподавателей
 	routes.SetupTeacherRoutes(router, config.DB)
+	routes.SetupCourseRoutes(router, config.DB)
 
 	// Дополнительные маршруты (если есть)
 	routes.SetupAdminRoutes(router, config.DB)
