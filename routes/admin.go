@@ -14,14 +14,16 @@ func SetupAdminRoutes(router *gin.Engine, db *gorm.DB) {
 	//adminRoutes.Use(middleware.AdminAuth()) // Раскомментируйте после реализации middleware
 	{
 		// POST /admin/students - создание студента администратором
-		adminRoutes.POST("/students", adminController.CreateStudent)
-		adminRoutes.DELETE("/students/:id", adminController.DeleteStudent)
+		adminRoutes.GET("/users", adminController.GetAllUsers)
+		adminRoutes.POST("/users", adminController.CreateUser)
+		adminRoutes.DELETE("/users/:id", adminController.DeleteStudent)
 
-		// POST /admin/teachers - создание преподавателя администратором
-		adminRoutes.POST("/teachers", adminController.CreateTeacher)
-		adminRoutes.DELETE("/teachers/:id", adminController.DeleteTeacher)
-
-		//adminRoutes.DELETE("/:id/courses", adminController.DeleteCourse)
+		adminRoutes.GET("/courses", adminController.GetAllCourses)
+		adminRoutes.POST("/courses", adminController.CreateCourse)
+		adminRoutes.DELETE("/courses/:id", adminController.DeleteCourse)
+		adminRoutes.POST("/courses/:id?students", adminController.AddStudentsToCourse)
+		adminRoutes.DELETE("/courses/{courseId}/students/{studentId}", adminController.RemoveStudentFromCourse)
+		adminRoutes.POST("/courses/{courseId}/teachers/{teacherId}", adminController.AssignTeacherToCourse)
 
 	}
 }

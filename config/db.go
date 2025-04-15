@@ -1,8 +1,6 @@
 package config
 
 import (
-	"CanvasApplication/models"
-	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
@@ -51,18 +49,6 @@ func migrateModels(db *gorm.DB) error {
 	// Set replication role for disabling foreign key checks
 	db.Exec("SET session_replication_role = 'replica'")
 
-	log.Println("🔹 Dropping existing tables...")
-	if err := db.Migrator().DropTable(&models.Teacher{}, &models.Student{}, &models.Course{}, &models.StudentCourse{}); err != nil {
-		log.Printf("⚠️ Error dropping tables: %v", err)
-		return fmt.Errorf("failed to drop tables: %w", err)
-	}
-
-	log.Println("🔹 Running AutoMigrate...")
-	if err := db.AutoMigrate(&models.Teacher{}, &models.Student{}, &models.Course{}, &models.StudentCourse{}); err != nil {
-		log.Printf("⚠️ AutoMigrate error: %v", err)
-		return fmt.Errorf("failed to migrate models: %w", err)
-	}
-
 	// Re-enable foreign key checks
 	db.Exec("SET session_replication_role = 'origin'")
 	log.Println("✅ Database migration completed successfully.")
@@ -71,9 +57,9 @@ func migrateModels(db *gorm.DB) error {
 
 type StudentCourse struct {
 	gorm.Model
-	StudentID uint `gorm:"primaryKey"`
-	CourseID  uint `gorm:"primaryKey"`
-	CreatedAt time.Time
+	student_id uint `gorm:"primaryKey"`
+	course_id  uint `gorm:"primaryKey"`
+	CreatedAt  time.Time
 }
 
 // GetDB возвращает экземпляр базы данных
