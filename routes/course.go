@@ -13,7 +13,7 @@ func SetupCourseRoutes(router *gin.Engine, db *gorm.DB) {
 	//courseRoutes.Use(middleware.AdminAuth()) // Раскомментируйте после реализации middleware
 	{
 		courseRoutes.GET("/teacher/:teacher_id", courseController.GetCoursesByTeacher)
-		courseRoutes.GET("/student/{studentId}", courseController.GetCoursesByStudent)
+		courseRoutes.GET("/student/:studentId", courseController.GetCoursesByStudent)
 		courseRoutes.DELETE("/:id", courseController.DeleteCourse)
 	}
 }

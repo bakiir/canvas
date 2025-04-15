@@ -22,8 +22,8 @@ func SetupAdminRoutes(router *gin.Engine, db *gorm.DB) {
 		adminRoutes.POST("/courses", adminController.CreateCourse)
 		adminRoutes.DELETE("/courses/:id", adminController.DeleteCourse)
 		adminRoutes.POST("/courses/:id?students", adminController.AddStudentsToCourse)
-		adminRoutes.DELETE("/courses/{courseId}/students/{studentId}", adminController.RemoveStudentFromCourse)
-		adminRoutes.POST("/courses/{courseId}/teachers/{teacherId}", adminController.AssignTeacherToCourse)
+		adminRoutes.DELETE("/courses/:courseId/students/:studentId", adminController.RemoveStudentFromCourse)
+		adminRoutes.POST("/courses/:courseId/teachers/:teacherId", adminController.AssignTeacherToCourse)
 
 	}
 }
