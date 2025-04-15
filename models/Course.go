@@ -8,6 +8,6 @@ type Course struct {
 	Capacity    int
 	Description string
 	Teacher     User
-	Students    []User `gorm:"many2many:student_courses;"`
+	Students    []User `gorm:"many2many:student_courses;joinForeignKey:CourseID;JoinReferences:StudentID"`
 	Assignments []Assignment
 }
