@@ -1,8 +1,6 @@
 package config
 
 import (
-	"CanvasApplication/models"
-	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
@@ -32,42 +30,40 @@ func Connect() {
 	sqlDB.SetConnMaxLifetime(30 * time.Minute) // Максимальное время жизни соединения в минутах
 
 	// Автомиграция моделей
-	if err := migrateModels(db); err != nil {
-		log.Fatalf("Failed to migrate models: %v", err)
-	}
+	log.Println("🔹 Using external migration tool (golang-migrate). No AutoMigrate is run.")
 
 	DB = db
 	log.Println("Successfully connected to database")
 }
 
-func migrateModels(db *gorm.DB) error {
-	log.Println("🔹 Starting migration...")
-
-	// Check which database you're connected to
-	dbName := ""
-	db.Raw("SELECT current_database()").Scan(&dbName)
-	log.Printf("🔹 Connected to database: %s", dbName)
-
-	// Set replication role for disabling foreign key checks
-	db.Exec("SET session_replication_role = 'replica'")
-
-	log.Println("🔹 Dropping existing tables...")
-	if err := db.Migrator().DropTable(&models.Teacher{}, &models.Student{}, &models.Course{}, &models.StudentCourse{}); err != nil {
-		log.Printf("⚠️ Error dropping tables: %v", err)
-		return fmt.Errorf("failed to drop tables: %w", err)
-	}
-
-	log.Println("🔹 Running AutoMigrate...")
-	if err := db.AutoMigrate(&models.Teacher{}, &models.Student{}, &models.Course{}, &models.StudentCourse{}); err != nil {
-		log.Printf("⚠️ AutoMigrate error: %v", err)
-		return fmt.Errorf("failed to migrate models: %w", err)
-	}
-
-	// Re-enable foreign key checks
-	db.Exec("SET session_replication_role = 'origin'")
-	log.Println("✅ Database migration completed successfully.")
-	return nil
-}
+//func migrateModels(db *gorm.DB) error {
+//	log.Println("🔹 Starting migration...")
+//
+//	// Check which database you're connected to
+//	dbName := ""
+//	db.Raw("SELECT current_database()").Scan(&dbName)
+//	log.Printf("🔹 Connected to database: %s", dbName)
+//
+//	// Set replication role for disabling foreign key checks
+//	db.Exec("SET session_replication_role = 'replica'")
+//
+//	log.Println("🔹 Dropping existing tables...")
+//	if err := db.Migrator().DropTable(&models.Teacher{}, &models.Student{}, &models.Course{}, &models.StudentCourse{}); err != nil {
+//		log.Printf("⚠️ Error dropping tables: %v", err)
+//		return fmt.Errorf("failed to drop tables: %w", err)
+//	}
+//
+//	log.Println("🔹 Running AutoMigrate...")
+//	if err := db.AutoMigrate(&models.Teacher{}, &models.Student{}, &models.Course{}, &models.StudentCourse{}); err != nil {
+//		log.Printf("⚠️ AutoMigrate error: %v", err)
+//		return fmt.Errorf("failed to migrate models: %w", err)
+//	}
+//
+//	// Re-enable foreign key checks
+//	db.Exec("SET session_replication_role = 'origin'")
+//	log.Println("✅ Database migration completed successfully.")
+//	return nil
+//}
 
 type StudentCourse struct {
 	gorm.Model
