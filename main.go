@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	// Инициализация Gin
+	// Инициализация Ginup
 	router := gin.Default()
 
 	// Подключение к базе данных

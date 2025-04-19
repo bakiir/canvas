@@ -2,6 +2,7 @@ package service
 
 import (
 	"CanvasApplication/models"
+	"CanvasApplication/utils"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
@@ -16,21 +17,43 @@ func NewTeacherController(db *gorm.DB) *TeacherController {
 	return &TeacherController{db: db}
 }
 
-func (tc *TeacherController) GetAllTeachers(c *gin.Context) {
-	var teachers []models.Teacher
-	if err := tc.db.Preload("Courses").Find(&teachers).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch teachers"})
+func (tc *TeacherController) CreateTeacher(c *gin.Context) {
+	var input struct {
+		Name     string `json:"name" binding:"required"`
+		Login    string `json:"login" binding:"required"`
+		Password string `json:"password" binding:"required,min=6"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Очищаем пароли перед отправкой
-	for i := range teachers {
-		teachers[i].Password = ""
+	var existing models.Teacher
+	if err := tc.db.Where("login = ?", input.Login).First(&existing).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Login already exists"})
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": teachers})
+	teacher := models.Teacher{
+		Name:  input.Name,
+		Login: input.Login,
+	}
+
+	if err := teacher.SetPassword(input.Password); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
+
+	if err := tc.db.Create(&teacher).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create teacher"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Teacher created successfully"})
 }
 
+// Логин преподавателя
 func (tc *TeacherController) TeacherLogin(c *gin.Context) {
 	var credentials struct {
 		Login    string `json:"login" binding:"required"`
@@ -48,13 +71,33 @@ func (tc *TeacherController) TeacherLogin(c *gin.Context) {
 		return
 	}
 
-	if teacher.Password != credentials.Password {
+	if !teacher.CheckPassword(credentials.Password) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
-	teacher.Password = ""
-	c.JSON(http.StatusOK, gin.H{"data": teacher})
+	token, err := utils.GenerateJWT(teacher.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"token": token})
+}
+
+func (tc *TeacherController) GetAllTeachers(c *gin.Context) {
+	var teachers []models.Teacher
+	if err := tc.db.Preload("Courses").Find(&teachers).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch teachers"})
+		return
+	}
+
+	// Очищаем пароли перед отправкой
+	for i := range teachers {
+		teachers[i].Password = ""
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": teachers})
 }
 
 func (tc *TeacherController) CreateCourse(c *gin.Context) {
@@ -69,16 +112,13 @@ func (tc *TeacherController) CreateCourse(c *gin.Context) {
 		return
 	}
 
-	// Проверяем существование преподавателя
 	var teacher models.Teacher
 	if err := tc.db.Preload("Courses").First(&teacher, input.TeacherID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Teacher not found"})
 		return
 	}
 
-	// Получаем количество курсов преподавателя (правильный способ)
 	count := tc.db.Model(&teacher).Association("Courses").Count()
-
 	if count >= 3 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Teacher has reached course limit (3)"})
 		return
@@ -89,14 +129,6 @@ func (tc *TeacherController) CreateCourse(c *gin.Context) {
 		Capacity:  input.Capacity,
 		TeacherID: input.TeacherID,
 	}
-
-	var teacherDB models.Teacher
-	err := tc.db.Where("id = ?", course.TeacherID).First(&teacher).Error
-	if err != nil {
-		err.Error() // Обработайте ошибку, если запись не найден
-	}
-
-	course.Teacher = teacherDB
 
 	if err := tc.db.Create(&course).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create course"})
@@ -120,38 +152,4 @@ func (tc *TeacherController) GetTeacherCourses(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": teacher.Courses})
-}
-
-func (tc *TeacherController) CreateTeacher(c *gin.Context) {
-	var input struct {
-		Name     string `json:"name" binding:"required"`
-		Login    string `json:"login" binding:"required"`
-		Password string `json:"password" binding:"required,min=6"`
-	}
-
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Проверяем уникальность логина
-	var existing models.Teacher
-	if err := tc.db.Where("login = ?", input.Login).First(&existing).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "Login already exists"})
-		return
-	}
-
-	teacher := models.Teacher{
-		Name:     input.Name,
-		Login:    input.Login,
-		Password: input.Password, // В реальном приложении хешируйте!
-	}
-
-	if err := tc.db.Create(&teacher).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create teacher"})
-		return
-	}
-
-	teacher.Password = ""
-	c.JSON(http.StatusCreated, gin.H{"data": teacher})
 }
