@@ -3,6 +3,7 @@ package service
 import (
 	"CanvasApplication/models"
 	"CanvasApplication/utils"
+
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
@@ -44,6 +45,15 @@ func (sc *StudentController) GetAllStudents(c *gin.Context) {
 }
 
 func (sc *StudentController) Enroll(c *gin.Context) {
+	// 1. Получаем роль пользователя из контекста
+	role, exists := c.Get("role")
+
+	if !exists || role != "student" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Only students can enroll in courses"})
+		return
+	}
+
+	// 2. Парсим входные данные
 	var input struct {
 		StudentID uint `json:"student_id" binding:"required"`
 		CourseID  uint `json:"course_id" binding:"required"`
@@ -54,52 +64,65 @@ func (sc *StudentController) Enroll(c *gin.Context) {
 		return
 	}
 
-	// Проверяем существование студента
+	// 3. Проверяем существование студента
 	var student models.Student
 	if err := sc.db.First(&student, input.StudentID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Student not found"})
 		return
 	}
 
-	// Проверяем существование курса
+	// 4. Проверяем существование курса
 	var course models.Course
 	if err := sc.db.Preload("Students").First(&course, input.CourseID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Course not found"})
 		return
 	}
 
-	// Проверяем есть ли место на курсе
+	// 5. Проверяем есть ли место на курсе
 	if len(course.Students) >= course.Capacity {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Course is full"})
 		return
 	}
 
-	// Проверяем уже записан ли студент
-	count := sc.db.Model(&student).Association("Courses").Count()
-	if count >= 3 {
+	// 6. Проверяем, сколько курсов у студента
+	courseCount := sc.db.Model(&student).Association("Courses").Count()
+	if courseCount >= 3 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Student has reached course limit (3)"})
 		return
 	}
 
-	// Записываем студента на курс
+	// 7. Проверяем, не записан ли студент уже на этот курс
+	isAlreadyEnrolled := false
+	for _, enrolledStudent := range course.Students {
+		if enrolledStudent.ID == student.ID {
+			isAlreadyEnrolled = true
+			break
+		}
+	}
+	if isAlreadyEnrolled {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Student already enrolled in this course"})
+		return
+	}
+
+	// 8. Записываем студента на курс
 	if err := sc.db.Model(&student).Association("Courses").Append(&course); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to enroll"})
 		return
 	}
 
-	// Уменьшаем доступные места
+	// 9. Уменьшаем количество доступных мест
 	if err := sc.db.Model(&course).Update("capacity", course.Capacity-1).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update capacity"})
 		return
 	}
 
+	// 10. Успех
 	c.JSON(http.StatusOK, gin.H{
 		"message":  "Enrolled successfully",
-		"capacity": course.Capacity - 1, // Возвращаем обновленную вместимость
+		"capacity": course.Capacity - 1, // Возвращаем новую вместимость
 	})
 }
 
-// Логин преподавателя
 func (tc *StudentController) Login(c *gin.Context) {
 	var credentials struct {
 		Login    string `json:"login" binding:"required"`
@@ -122,7 +145,7 @@ func (tc *StudentController) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := utils.GenerateJWT(student.ID)
+	token, err := utils.GenerateToken(student.ID, "student")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return

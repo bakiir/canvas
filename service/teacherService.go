@@ -76,7 +76,7 @@ func (tc *TeacherController) TeacherLogin(c *gin.Context) {
 		return
 	}
 
-	token, err := utils.GenerateJWT(teacher.ID)
+	token, err := utils.GenerateToken(teacher.ID, "teacher")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return

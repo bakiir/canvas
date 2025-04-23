@@ -5,13 +5,16 @@ import (
 	"time"
 )
 
-var jwtKey = []byte("key") // Секретный ключ, желательно из .env!
+var jwtSecret = []byte("key")
 
-func GenerateJWT(teacherID uint) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": teacherID,
-		"exp":     time.Now().Add(24 * time.Hour).Unix(), // Жизнь токена = 24 часа
-	})
+func GenerateToken(userID uint, role string) (string, error) {
+	claims := jwt.MapClaims{
+		"user_id": userID,
+		"role":    role,
+		"exp":     time.Now().Add(time.Hour * 24).Unix(), // токен на 1 день
+	}
 
-	return token.SignedString(jwtKey)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	return token.SignedString(jwtSecret)
 }
