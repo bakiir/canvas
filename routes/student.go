@@ -11,9 +11,11 @@ func SetupStudentRoutes(router *gin.Engine, db *gorm.DB) {
 
 	studentRoutes := router.Group("/students")
 	{
+		studentRoutes.POST("/register", studentController.CreateStudent)
 		studentRoutes.GET("/", studentController.GetAllStudents)
 		studentRoutes.POST("/login", studentController.Login)
 		studentRoutes.POST("/enroll", studentController.Enroll)
 		studentRoutes.GET("/:id/courses", studentController.GetStudentCourses)
 	}
+
 }

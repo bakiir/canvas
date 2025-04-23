@@ -2,6 +2,7 @@ package service
 
 import (
 	"CanvasApplication/models"
+	"CanvasApplication/utils"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
@@ -98,7 +99,8 @@ func (sc *StudentController) Enroll(c *gin.Context) {
 	})
 }
 
-func (sc *StudentController) Login(c *gin.Context) {
+// Логин преподавателя
+func (tc *StudentController) Login(c *gin.Context) {
 	var credentials struct {
 		Login    string `json:"login" binding:"required"`
 		Password string `json:"password" binding:"required"`
@@ -110,18 +112,57 @@ func (sc *StudentController) Login(c *gin.Context) {
 	}
 
 	var student models.Student
-	if err := sc.db.Where("id = ?", credentials.Login).First(&student).Error; err != nil {
+	if err := tc.db.Where("login = ?", credentials.Login).First(&student).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
-	// В реальном приложении используйте bcrypt или аналоги
-	if student.Password != credentials.Password {
+	if !student.CheckPassword(credentials.Password) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
-	// Не возвращаем пароль
-	student.Password = ""
-	c.JSON(http.StatusOK, gin.H{"data": student})
+	token, err := utils.GenerateJWT(student.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"token": token})
+}
+
+func (tc *StudentController) CreateStudent(c *gin.Context) {
+	var input struct {
+		Name     string `json:"name" binding:"required"`
+		Login    string `json:"login" binding:"required"`
+		Password string `json:"password" binding:"required,min=6"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var existing models.Student
+	if err := tc.db.Where("login = ?", input.Login).First(&existing).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Login already exists"})
+		return
+	}
+
+	student := models.Student{
+		Name:  input.Name,
+		Login: input.Login,
+	}
+
+	if err := student.SetPassword(input.Password); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
+
+	if err := tc.db.Create(&student).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create teacher"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Student created successfully"})
 }

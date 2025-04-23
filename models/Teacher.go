@@ -13,7 +13,6 @@ type Teacher struct {
 	Courses  []Course `gorm:"foreignKey:TeacherID;"`
 }
 
-// Хэширование пароля
 func (t *Teacher) SetPassword(password string) error {
 	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -23,7 +22,6 @@ func (t *Teacher) SetPassword(password string) error {
 	return nil
 }
 
-// Проверка пароля
 func (t *Teacher) CheckPassword(password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(t.Password), []byte(password))
 	return err == nil
