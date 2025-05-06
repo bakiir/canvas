@@ -18,7 +18,8 @@ func SetupTeacherRoutes(router *gin.Engine, db *gorm.DB) {
 		teacherRoutes.POST("/login", teacherController.TeacherLogin)
 		teacherRoutes.GET("/:id/courses", teacherController.GetTeacherCourses)
 
-		teacherRoutes.POST("/courses", middleware.RoleMiddleware(), teacherController.CreateCourse)
-
+		teacherRoutes.POST("/courses", middleware.RoleMiddleware("teacher"), teacherController.CreateCourse)
+		//teacherRoutes.POST("/courses/:id/task", middleware.RoleMiddleware("teacher"), teacherController.CreateTask)
+		
 	}
 }
