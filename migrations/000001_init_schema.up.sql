@@ -29,6 +29,47 @@ CREATE TABLE courses (
                          deleted_at TIMESTAMP
 );
 
+CREATE TABLE tasks (
+                       id BIGSERIAL PRIMARY KEY,
+                       created_at TIMESTAMP,
+                       updated_at TIMESTAMP,
+                       deleted_at TIMESTAMP,
+
+                       title VARCHAR(255),
+                       description TEXT,
+                       deadline TIMESTAMP,
+
+                       course_id BIGINT,
+                       CONSTRAINT fk_course FOREIGN KEY (course_id)
+                           REFERENCES courses(id)
+                           ON UPDATE CASCADE
+                           ON DELETE SET NULL
+);
+
+
+CREATE TABLE homeworks (
+                           id BIGSERIAL PRIMARY KEY,
+                           created_at TIMESTAMP,
+                           updated_at TIMESTAMP,
+                           deleted_at TIMESTAMP,
+
+                           student_id BIGINT NOT NULL,
+                           task_id BIGINT NOT NULL,
+
+                           file_url VARCHAR(512),
+                           uploaded_at TIMESTAMP,
+
+                           CONSTRAINT fk_student FOREIGN KEY (student_id)
+                               REFERENCES students(id)
+                               ON UPDATE CASCADE
+                               ON DELETE CASCADE,
+
+                           CONSTRAINT fk_task FOREIGN KEY (task_id)
+                               REFERENCES tasks(id)
+                               ON UPDATE CASCADE
+                               ON DELETE CASCADE
+);
+
 CREATE TABLE student_courses (
                                  student_id INTEGER REFERENCES students(id),
                                  course_id INTEGER REFERENCES courses(id),

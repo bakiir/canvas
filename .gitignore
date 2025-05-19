@@ -1,3 +1,8 @@
-.air.toml
-.idea
-.env
+
+./tmp
+./.idea
+./.env
+./go.mod
+./go.sum
+entrypoint.sh
+./.air.toml

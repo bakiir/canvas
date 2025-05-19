@@ -44,8 +44,6 @@ func Connect() {
 	log.Println("🔹 Using external migration tool (golang-migrate). No AutoMigrate is run.")
 
 	DB = db
-	log.Println("Successfully connected to database")
-
 }
 
 type StudentCourse struct {

@@ -30,6 +30,9 @@ func registerRoutes(router *gin.Engine) {
 	// Дополнительные маршруты (если есть)
 	routes.SetupAdminRoutes(router, config.DB)
 
+	routes.SetupTaskRoutes(router, config.DB)
+
+	routes.SetupHomeWorkRoutes(router, config.DB)
 	// Health check
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
