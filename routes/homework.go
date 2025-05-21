@@ -12,8 +12,10 @@ func SetupHomeWorkRoutes(router *gin.Engine, db *gorm.DB) {
 
 	homeworkRoutes := router.Group("/homeworks")
 	{
-		homeworkRoutes.POST("/upload", middleware.RoleMiddleware("student"),
+		homeworkRoutes.POST("/upload",
+			middleware.RoleMiddleware("student"),
 			homeworkController.UploadHomework)
+
 		homeworkRoutes.GET("/:taskId/download/:studentId",
 			middleware.RoleMiddleware("teacher", "student"),
 			homeworkController.DownloadFile())
@@ -21,9 +23,14 @@ func SetupHomeWorkRoutes(router *gin.Engine, db *gorm.DB) {
 		homeworkRoutes.GET("/:taskId/homeworks",
 			middleware.RoleMiddleware("teacher"),
 			homeworkController.GetListOfHomeworks())
+
 		homeworkRoutes.POST("/:taskId/grade/:studentId",
 			middleware.RoleMiddleware("teacher"),
 			homeworkController.SetGrade())
+
+		homeworkRoutes.GET("/:taskId/grade",
+			middleware.RoleMiddleware("student"),
+			homeworkController.GetStudentGrades())
 
 	}
 }

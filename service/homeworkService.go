@@ -214,3 +214,43 @@ func (ctrl *HomeworkController) SetGrade() gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{"message": "Оценка успешно выставлена", "grade": request.Grade})
 	}
 }
+
+func (ctrl *HomeworkController) GetStudentGrades() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Получаем studentID и taskID из URL параметров
+		taskIDStr := c.Param("taskId")
+		taskID, err := strconv.ParseUint(taskIDStr, 10, 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task ID"})
+			return
+		}
+
+		// Получаем user_id из контекста (его положил RoleMiddleware)
+		userIDInterface, exists := c.Get("user_id")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found"})
+			return
+		}
+
+		userIDFloat, ok := userIDInterface.(float64) // jwt.MapClaims хранит числа как float64
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID type"})
+			return
+		}
+		userID := uint(userIDFloat)
+
+		// Находим домашнее задание для данного студента и задания
+		var homework models.Homework
+		if err := ctrl.DB.Where("student_id = ? AND task_id = ?", userID, taskID).First(&homework).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Homework not found or access denied"})
+			return
+		}
+
+		// Возвращаем оценку студенту
+		c.JSON(http.StatusOK, gin.H{
+			"task_id":    homework.TaskID,
+			"student_id": homework.StudentID,
+			"grade":      homework.Grade,
+		})
+	}
+}
