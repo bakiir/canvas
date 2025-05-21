@@ -7,8 +7,8 @@ import (
 
 type Homework struct {
 	gorm.Model
-	StudentID uint
-	TaskID    uint
+	StudentID uint `gorm:"uniqueIndex:idx_student_task"`
+	TaskID    uint `gorm:"uniqueIndex:idx_student_task"`
 
 	FileURL    string // сюда кладёшь путь/ссылку от файл-сервиса
 	UploadedAt time.Time
