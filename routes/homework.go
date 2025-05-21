@@ -21,6 +21,9 @@ func SetupHomeWorkRoutes(router *gin.Engine, db *gorm.DB) {
 		homeworkRoutes.GET("/:taskId/homeworks",
 			middleware.RoleMiddleware("teacher"),
 			homeworkController.GetListOfHomeworks())
+		homeworkRoutes.POST("/:taskId/grade/:studentId",
+			middleware.RoleMiddleware("teacher"),
+			homeworkController.SetGrade())
 
 	}
 }

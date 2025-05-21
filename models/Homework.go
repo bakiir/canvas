@@ -12,6 +12,7 @@ type Homework struct {
 
 	FileURL    string // сюда кладёшь путь/ссылку от файл-сервиса
 	UploadedAt time.Time
+	Grade      *uint `json:"grade"` // nullable — можно пока не ставить
 
 	Student Student `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Task    Task    `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`

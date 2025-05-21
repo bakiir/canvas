@@ -175,3 +175,42 @@ func sendFileToFileService(filename string, file io.Reader) (string, error) {
 
 	return result.URL, nil
 }
+
+func (ctrl *HomeworkController) SetGrade() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		taskID := c.Param("taskId")
+		studentID := c.Param("studentId")
+
+		// Только учитель может ставить оценки
+		userRole := c.GetString("role") // предполагаем, что роль уже вытянута из middleware
+		if userRole != "teacher" {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Только учитель может выставлять оценки"})
+			return
+		}
+
+		// Парсим тело запроса
+		var request struct {
+			Grade uint `json:"grade"`
+		}
+		if err := c.BindJSON(&request); err != nil || request.Grade > 100 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Оценка должна быть числом от 0 до 100"})
+			return
+		}
+
+		// Находим работу
+		var homework models.Homework
+		if err := ctrl.DB.Where("task_id = ? AND student_id = ?", taskID, studentID).First(&homework).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Домашняя работа не найдена"})
+			return
+		}
+
+		// Обновляем оценку
+		homework.Grade = &request.Grade
+		if err := ctrl.DB.Save(&homework).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось сохранить оценку"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": "Оценка успешно выставлена", "grade": request.Grade})
+	}
+}
