@@ -12,5 +12,5 @@ type Task struct {
 	Deadline    time.Time
 
 	CourseID uint   `json:"course_id"`
-	Course   Course `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	Course   Course `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"-"`
 }
